@@ -1,4 +1,6 @@
-#include <HCSR04.h>;
+// there are an astonishing number of libraries for the ultrasonic sensor 
+// this one is from https://github.com/gamegine/HCSR04-ultrasonic-sensor-lib
+#include <HCSR04.h>; 
 
 // setting up the pin numbers in these following lines
 
@@ -18,6 +20,7 @@ int IROut = 5;
 
 // used later on
 float dist;
+int floorColor;
 
 void setup()
 {
@@ -90,7 +93,8 @@ void loop() // this code section repeats until something stops it
   dist = hc.dist();
   // IROut has a digital (two options) output: 0 means it detects a reflected signal, 1 means it does not
   // in practical terms, this means that 0 = white surface, 1 = black surface
-  if (digitalRead(IROut) == 0) { // if surface = white (in bounds), continue with operation
+  floorColor = digitalRead(IROut);
+  if (floorColor == 0) { // if surface = white (in bounds), continue with operation
     if (dist == 0.0 || dist >= 75) { // if no object is detected within range of the sensor, OR if an object is detected at a distance >= 75 cm, do this
       turnLeft(); 
       // This command tells the robot, "If you don't see anything close in front of you, turn left..."
@@ -107,6 +111,6 @@ void loop() // this code section repeats until something stops it
     // This is useful in that, if the robot is placed back on a white surface, it will start operating again without needing a reboot
   }
   // send the outputs of the IR sensor and ultrasonic sensor to console 
-  Serial.println(digitalRead(IROut)); 
+  Serial.println(floorColor); 
   Serial.println(dist);
 }
