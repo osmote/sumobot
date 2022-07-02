@@ -19,8 +19,9 @@ int in4 = 9;
 int IROut = 5;
 
 // used later on
-float dist;
+float objDistance;
 int floorColor;
+int objLastSeen;
 
 void setup()
 {
@@ -81,6 +82,19 @@ void turnLeft()
   // set speed to 180 out of possible range 0~255
   analogWrite(enB, 180);
 }
+void turnRight()
+{
+  // turn on motor A
+  digitalWrite(in1, HIGH);
+  digitalWrite(in2, LOW);
+  // set speed to 180 out of possible range 0~255
+  analogWrite(enA, 180);
+  // turn on motor B
+  digitalWrite(in3, HIGH);
+  digitalWrite(in4, LOW);
+  // set speed to 180 out of possible range 0~255
+  analogWrite(enB, 180);
+}
 void stop() 
 {
   analogWrite(enA, 0);
@@ -90,18 +104,29 @@ void loop() // this code section repeats until something stops it
 {
   // hc.dist() returns the distance (cm) seen by the ultrasonic sensor
   // if distance is above the maximum distance it can detect, it returns 0.0
-  dist = hc.dist();
+  objDistance = hc.dist();
   // IROut has a digital (two options) output: 0 means it detects a reflected signal, 1 means it does not
   // in practical terms, this means that 0 = white surface, 1 = black surface
   floorColor = digitalRead(IROut);
   if (floorColor == 0) { // if surface = white (in bounds), continue with operation
-    if (dist == 0.0 || dist >= 75) { // if no object is detected within range of the sensor, OR if an object is detected at a distance >= 75 cm, do this
+    // if no object is detected within range of the sensor, OR if an object is detected at a distance >= 75 cm,
+    // AND no object has been seen recently, do this
+    if (objDistance == 0.0 || objDistance >= 75 && objLastSeen >= 15) { 
+      // This tells the robot, "If you don't see anything close in front of you, and you haven't seen anything recently, turn left..."
       turnLeft(); 
-      // This command tells the robot, "If you don't see anything close in front of you, turn left..."
     }
-    else { // if an object is detected within the range 0-75 cm (exclusive), do this
+    // if no object is detected within range of the sensor, OR if an object is detected at a distance >= 75 cm,
+    // AND an object has been seen recently, do this
+    else if (objDistance == 0.0 || objDistance >= 75 && objLastSeen < 15) {
+      // This tells the robot, "...otherwise, if you don't see anything close in front of you, but you have seen something recently, turn right..."
+      turnRight();
+    }
+    // if an object is detected within the range 0-75 cm (exclusive), do this
+    else { 
+      // This tells the robot, "...otherwise, go forward."
       goForward();
-      // This command tells the robot, "...otherwise, go forward."
+      // reset timer for object last being seen
+      objLastSeen = 0;
     }
     delay(60); // Wait 60 milliseconds (this command may be unnecessary)
   }
@@ -111,6 +136,8 @@ void loop() // this code section repeats until something stops it
     // This is useful in that, if the robot is placed back on a white surface, it will start operating again without needing a reboot
   }
   // send the outputs of the IR sensor and ultrasonic sensor to console 
+  Serial.println(objLastSeen);
   Serial.println(floorColor); 
-  Serial.println(dist);
+  Serial.println(objDistance);
+  objLastSeen += 1;
 }
